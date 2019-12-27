@@ -6,6 +6,12 @@ import numpy as np
 import pybullet
 import os, sys
 
+import pybullet_envs
+import os
+ROOT = os.path.dirname(os.path.abspath(pybullet_envs.__file__))
+
+from gym import spaces
+
 
 class InvertedPendulumBulletEnv(MJCFBaseBulletEnv):
 
@@ -14,14 +20,18 @@ class InvertedPendulumBulletEnv(MJCFBaseBulletEnv):
     MJCFBaseBulletEnv.__init__(self, self.robot)
     self.stateId = -1
 
+    initial_boundary_path = ROOT+"/initial_space/"+self.__class__.__name__+"-v0/boundary.npy"
+    boundary = np.load(initial_boundary_path)
+    self.initial_space = spaces.Box(low=boundary[0], high=boundary[1])
+
   def create_single_player_scene(self, bullet_client):
     return SingleRobotEmptyScene(bullet_client, gravity=9.8, timestep=0.0165, frame_skip=1)
 
-  def reset(self):
+  def reset(self, **kwargs):
     if (self.stateId >= 0):
       #print("InvertedPendulumBulletEnv reset p.restoreState(",self.stateId,")")
       self._p.restoreState(self.stateId)
-    r = MJCFBaseBulletEnv.reset(self)
+    r = MJCFBaseBulletEnv.reset(self, **kwargs)
     if (self.stateId < 0):
       self.stateId = self._p.saveState()
       #print("InvertedPendulumBulletEnv reset self.stateId=",self.stateId)
@@ -53,6 +63,14 @@ class InvertedPendulumSwingupBulletEnv(InvertedPendulumBulletEnv):
     MJCFBaseBulletEnv.__init__(self, self.robot)
     self.stateId = -1
 
+    initial_boundary_path = ROOT+"/initial_space/"+self.__class__.__name__+"-v0/boundary.npy"
+    boundary = np.load(initial_boundary_path)
+    self.initial_space = spaces.Box(low=boundary[0], high=boundary[1])
+
+  def step(self, a):
+    state, reward, done, info = super().step(a)
+    return state, reward/1000, done, info
+
 
 class InvertedDoublePendulumBulletEnv(MJCFBaseBulletEnv):
 
@@ -61,13 +79,19 @@ class InvertedDoublePendulumBulletEnv(MJCFBaseBulletEnv):
     MJCFBaseBulletEnv.__init__(self, self.robot)
     self.stateId = -1
 
+    initial_boundary_path = ROOT+"/initial_space/"+self.__class__.__name__+"-v0/boundary.npy"
+    boundary = np.load(initial_boundary_path)
+    self.initial_space = spaces.Box(low=boundary[0], high=boundary[1])
+
+
   def create_single_player_scene(self, bullet_client):
     return SingleRobotEmptyScene(bullet_client, gravity=9.8, timestep=0.0165, frame_skip=1)
 
-  def reset(self):
+  def reset(self, **kwargs):
     if (self.stateId >= 0):
       self._p.restoreState(self.stateId)
-    r = MJCFBaseBulletEnv.reset(self)
+    r = MJCFBaseBulletEnv.reset(self, **kwargs)
+    
     if (self.stateId < 0):
       self.stateId = self._p.saveState()
     return r
@@ -86,7 +110,8 @@ class InvertedDoublePendulumBulletEnv(MJCFBaseBulletEnv):
     done = self.robot.pos_y + 0.3 <= 1
     self.rewards = [float(alive_bonus), float(-dist_penalty), float(-vel_penalty)]
     self.HUD(state, a, done)
-    return state, sum(self.rewards), done, {}
+
+    return state, sum(self.rewards)/10000, done, {}
 
   def camera_adjust(self):
     self.camera.move_and_look_at(0, 1.2, 1.2, 0, 0, 0.5)

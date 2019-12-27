@@ -21,6 +21,8 @@ import pybullet_data
 from . import minitaur_env_randomizer
 from pkg_resources import parse_version
 
+from utils import reset_current_system_state, get_current_system_state
+
 NUM_SUBSTEPS = 5
 NUM_MOTORS = 8
 MOTOR_ANGLE_OBSERVATION_INDEX = 0
@@ -166,7 +168,7 @@ class MinitaurBulletEnv(gym.Env):
   def configure(self, args):
     self._args = args
 
-  def reset(self):
+  def reset(self, x0=None):
     if self._hard_reset:
       self._pybullet_client.resetSimulation()
       self._pybullet_client.setPhysicsEngineParameter(
@@ -208,7 +210,16 @@ class MinitaurBulletEnv(gym.Env):
         if self._pd_control_enabled or self._accurate_motor_model_enabled:
           self.minitaur.ApplyAction([math.pi / 2] * 8)
         self._pybullet_client.stepSimulation()
+
+    if x0 is not None: 
+      reset_current_system_state(x0)
+
     return self._noisy_observation()
+
+  @property
+  def state(self):
+    return get_current_system_state(flatten=True)
+  
 
   def seed(self, seed=None):
     self.np_random, seed = seeding.np_random(seed)

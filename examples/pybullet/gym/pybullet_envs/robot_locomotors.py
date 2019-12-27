@@ -5,6 +5,9 @@ import os
 import pybullet_data
 from robot_bases import BodyPart
 
+# import pdb
+
+debug_list = []
 
 class WalkerBase(MJCFBasedRobot):
 
@@ -16,6 +19,8 @@ class WalkerBase(MJCFBasedRobot):
     self.walk_target_x = 1e3  # kilometer away
     self.walk_target_y = 0
     self.body_xyz = [0, 0, 0]
+
+    self.reset_cal_state_count = 0
 
   def robot_specific_reset(self, bullet_client):
     self._p = bullet_client
@@ -46,7 +51,8 @@ class WalkerBase(MJCFBasedRobot):
                     )  # torso z is more informative than mean z
     self.body_rpy = body_pose.rpy()
     z = self.body_xyz[2]
-    if self.initial_z == None:
+    if self.initial_z == None or self.reset_cal_state_count<2:
+      self.reset_cal_state_count += 1
       self.initial_z = z
     r, p, yaw = self.body_rpy
     self.walk_target_theta = np.arctan2(self.walk_target_y - self.body_xyz[1],
@@ -60,6 +66,11 @@ class WalkerBase(MJCFBasedRobot):
     vx, vy, vz = np.dot(rot_speed,
                         self.robot_body.speed())  # rotate speed back to body point of view
 
+    # print("--calc_state--")
+    # pdb.set_trace()
+    # print(z)
+    # print(self.initial_z)
+    # print("--------------")
     more = np.array(
         [
             z - self.initial_z,
@@ -72,6 +83,22 @@ class WalkerBase(MJCFBasedRobot):
             p
         ],
         dtype=np.float32)
+    # print(more)
+    # print(j)
+    # print(self.feet_contact)
+    # print(np.clip(np.concatenate([more] + [j] + [self.feet_contact]), -5, +5))
+    # print(angle_to_target)
+    # print(self.body_rpy)
+    # print(self.walk_target_theta)
+    # print(self.body_xyz)
+    # print(self.robot_body.pose().xyz())
+    # print(parts_xyz)
+    # debug_list.append(parts_xyz)
+    # if len(debug_list) == 3:
+    #   print("debug_list[0] == debug_list[2]:", np.array(debug_list[0])==np.array(debug_list[2][:-3]))
+    #   assert False
+    # print(len(self.parts.values()))
+  
     return np.clip(np.concatenate([more] + [j] + [self.feet_contact]), -5, +5)
 
   def calc_potential(self):
@@ -99,6 +126,9 @@ class Hopper(WalkerBase):
   def alive_bonus(self, z, pitch):
     return +1 if z > 0.8 and abs(pitch) < 1.0 else -1
 
+  def safety_reward(self, z, pitch):
+    return (z-0.8) + (1.0-abs(pitch)) if z > 0.8 and abs(pitch) < 1.0 else -99999
+
 
 class Walker2D(WalkerBase):
   foot_list = ["foot", "foot_left"]
@@ -107,7 +137,10 @@ class Walker2D(WalkerBase):
     WalkerBase.__init__(self, "walker2d.xml", "torso", action_dim=6, obs_dim=22, power=0.40)
 
   def alive_bonus(self, z, pitch):
-    return +1 if z > 0.8 and abs(pitch) < 1.0 else -1
+    return +1 
+
+  def safety_reward(self, z, pitch):
+    return 1 #(z-0.8) + (1.0-abs(pitch)) if z > 0.8 and abs(pitch) < 1.0 else -99999
 
   def robot_specific_reset(self, bullet_client):
     WalkerBase.robot_specific_reset(self, bullet_client)
@@ -127,6 +160,11 @@ class HalfCheetah(WalkerBase):
     return +1 if np.abs(pitch) < 1.0 and not self.feet_contact[1] and not self.feet_contact[
         2] and not self.feet_contact[4] and not self.feet_contact[5] else -1
 
+  def safety_reward(self, z, pitch):
+    return (1.0-np.abs(pitch)) - self.feet_contact[1] - self.feet_contact[2] - self.feet_contact[4]\
+           - self.feet_contact[5] if np.abs(pitch) < 1.0 and not self.feet_contact[1] and not self.feet_contact[
+           2] and not self.feet_contact[4] and not self.feet_contact[5] else -99999
+
   def robot_specific_reset(self, bullet_client):
     WalkerBase.robot_specific_reset(self, bullet_client)
     self.jdict["bthigh"].power_coef = 120.0
@@ -145,6 +183,9 @@ class Ant(WalkerBase):
 
   def alive_bonus(self, z, pitch):
     return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
+
+  def safety_reward(self, z, pitch):
+    return z-0.26 if z > 0.26 else -99999
 
 
 class Humanoid(WalkerBase):
@@ -205,6 +246,9 @@ class Humanoid(WalkerBase):
 
   def alive_bonus(self, z, pitch):
     return +2 if z > 0.78 else -1  # 2 here because 17 joints produce a lot of electricity cost just from policy noise, living must be better than dying
+
+  def safety_reward(self, z, pitch):
+    return 2*(z-0.78) if z > 0.78 else -99999
 
 
 def get_cube(_p, x, y, z):
@@ -313,6 +357,10 @@ class HumanoidFlagrunHarder(HumanoidFlagrun):
     # End episode if the robot can't get up in 170 frames, to save computation and decorrelate observations.
     self.frame += 1
     return self.potential_leak() if self.on_ground_frame_counter < 170 else -1
+
+  def safety_reward(self, z, pitch):
+    "placeholder for safety reward"
+    return 0
 
   def potential_leak(self):
     z = self.body_xyz[2]  # 0.00 .. 0.8 .. 1.05 normal walk, 1.2 when jumping

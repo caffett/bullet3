@@ -4,6 +4,12 @@ import numpy as np
 import pybullet
 from robot_locomotors import Hopper, Walker2D, HalfCheetah, Ant, Humanoid, HumanoidFlagrun, HumanoidFlagrunHarder
 
+import pybullet_envs
+import os
+ROOT = os.path.dirname(os.path.abspath(pybullet_envs.__file__))
+
+from gym import spaces
+
 
 class WalkerBaseBulletEnv(MJCFBaseBulletEnv):
 
@@ -15,6 +21,7 @@ class WalkerBaseBulletEnv(MJCFBaseBulletEnv):
     self.walk_target_x = 1e3  # kilometer away
     self.walk_target_y = 0
     self.stateId = -1
+    self.rewards_dir = {"safety": 0.0, "electricity": 0.0}
 
   def create_single_player_scene(self, bullet_client):
     self.stadium_scene = SinglePlayerStadiumScene(bullet_client,
@@ -23,12 +30,12 @@ class WalkerBaseBulletEnv(MJCFBaseBulletEnv):
                                                   frame_skip=4)
     return self.stadium_scene
 
-  def reset(self):
+  def reset(self, **kwargs):
     if (self.stateId >= 0):
-      #print("restoreState self.stateId:",self.stateId)
+      # print("restoreState self.stateId:",self.stateId)
       self._p.restoreState(self.stateId)
 
-    r = MJCFBaseBulletEnv.reset(self)
+    r = MJCFBaseBulletEnv.reset(self, **kwargs)
     self._p.configureDebugVisualizer(pybullet.COV_ENABLE_RENDERING, 0)
 
     self.parts, self.jdict, self.ordered_joints, self.robot_body = self.robot.addToScene(
@@ -71,7 +78,9 @@ class WalkerBaseBulletEnv(MJCFBaseBulletEnv):
         self.robot.alive_bonus(
             state[0] + self.robot.initial_z,
             self.robot.body_rpy[1]))  # state[0] is body height above ground, body_rpy[1] is pitch
+    # self.reward
     done = self._isDone()
+
     if not np.isfinite(state).all():
       print("~INF~", state)
       done = True
@@ -96,6 +105,11 @@ class WalkerBaseBulletEnv(MJCFBaseBulletEnv):
     electricity_cost = self.electricity_cost * float(np.abs(a * self.robot.joint_speeds).mean(
     ))  # let's assume we have DC motor with controller, and reverse current braking
     electricity_cost += self.stall_torque_cost * float(np.square(a).mean())
+
+    self.rewards_dir["safety"] = self.robot.safety_reward(
+            state[0] + self.robot.initial_z,
+            self.robot.body_rpy[1])
+    self.rewards_dir["electricity"] = electricity_cost
 
     joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
     debugmode = 0
@@ -135,30 +149,55 @@ class HopperBulletEnv(WalkerBaseBulletEnv):
   def __init__(self, render=False):
     self.robot = Hopper()
     WalkerBaseBulletEnv.__init__(self, self.robot, render)
+    initial_boundary_path = ROOT+"/initial_space/"+self.__class__.__name__+"-v0/boundary.npy"
+    boundary = np.load(initial_boundary_path)
+    self.initial_space = spaces.Box(low=boundary[0], high=boundary[1])
 
+  def step(self, a):
+    state, reward, done, info = super().step(a)
+    return state, reward/3000, done, info
 
 class Walker2DBulletEnv(WalkerBaseBulletEnv):
 
   def __init__(self, render=False):
     self.robot = Walker2D()
     WalkerBaseBulletEnv.__init__(self, self.robot, render)
+    initial_boundary_path = ROOT+"/initial_space/"+self.__class__.__name__+"-v0/boundary.npy"
+    boundary = np.load(initial_boundary_path)
+    self.initial_space = spaces.Box(low=boundary[0], high=boundary[1])
 
+  def step(self, a):
+    state, reward, done, info = super().step(a)
+    return state, reward/3000, done, info
 
 class HalfCheetahBulletEnv(WalkerBaseBulletEnv):
 
   def __init__(self, render=False):
     self.robot = HalfCheetah()
     WalkerBaseBulletEnv.__init__(self, self.robot, render)
+    initial_boundary_path = ROOT+"/initial_space/"+self.__class__.__name__+"-v0/boundary.npy"
+    boundary = np.load(initial_boundary_path)
+    self.initial_space = spaces.Box(low=boundary[0], high=boundary[1])
 
   def _isDone(self):
     return False
 
+  def step(self, a):
+    state, reward, done, info = super().step(a)
+    return state, reward/3000, done, info
 
 class AntBulletEnv(WalkerBaseBulletEnv):
 
   def __init__(self, render=False):
     self.robot = Ant()
     WalkerBaseBulletEnv.__init__(self, self.robot, render)
+    initial_boundary_path = ROOT+"/initial_space/"+self.__class__.__name__+"-v0/boundary.npy"
+    boundary = np.load(initial_boundary_path)
+    self.initial_space = spaces.Box(low=boundary[0], high=boundary[1])
+
+  def step(self, a):
+    state, reward, done, info = super().step(a)
+    return state, reward/3000, done, info
 
 
 class HumanoidBulletEnv(WalkerBaseBulletEnv):
@@ -168,6 +207,13 @@ class HumanoidBulletEnv(WalkerBaseBulletEnv):
     WalkerBaseBulletEnv.__init__(self, self.robot, render)
     self.electricity_cost = 4.25 * WalkerBaseBulletEnv.electricity_cost
     self.stall_torque_cost = 4.25 * WalkerBaseBulletEnv.stall_torque_cost
+    initial_boundary_path = ROOT+"/initial_space/"+self.__class__.__name__+"-v0/boundary.npy"
+    boundary = np.load(initial_boundary_path)
+    self.initial_space = spaces.Box(low=boundary[0], high=boundary[1])
+
+  def step(self, a):
+    state, reward, done, info = super().step(a)
+    return state, reward/3000, done, info
 
 
 class HumanoidFlagrunBulletEnv(HumanoidBulletEnv):

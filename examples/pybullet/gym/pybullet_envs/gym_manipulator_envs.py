@@ -3,12 +3,22 @@ from .env_bases import MJCFBaseBulletEnv
 import numpy as np
 from robot_manipulators import Reacher, Pusher, Striker, Thrower
 
+import pybullet_envs
+import os
+ROOT = os.path.dirname(os.path.abspath(pybullet_envs.__file__))
+
+from gym import spaces
+
 
 class ReacherBulletEnv(MJCFBaseBulletEnv):
 
   def __init__(self, render=False):
     self.robot = Reacher()
     MJCFBaseBulletEnv.__init__(self, self.robot, render)
+    initial_boundary_path = ROOT+"/initial_space/"+self.__class__.__name__+"-v0/boundary.npy"
+    boundary = np.load(initial_boundary_path)
+    self.initial_space = spaces.Box(low=boundary[0], high=boundary[1])
+    self.rewards_dir = {"electricity": 0.0}
 
   def create_single_player_scene(self, bullet_client):
     return SingleRobotEmptyScene(bullet_client, gravity=0.0, timestep=0.0165, frame_skip=1)
@@ -35,7 +45,8 @@ class ReacherBulletEnv(MJCFBaseBulletEnv):
         float(stuck_joint_cost)
     ]
     self.HUD(state, a, False)
-    return state, sum(self.rewards), False, {}
+    self.rewards_dir["electricity"] = electricity_cost
+    return state, sum(self.rewards)/100.0, False, {}
 
   def camera_adjust(self):
     x, y, z = self.robot.fingertip.pose().xyz()

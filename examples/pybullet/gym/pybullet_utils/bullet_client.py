@@ -23,7 +23,9 @@ class BulletClient(object):
     self._shapes = {}
 
     if connection_mode is None:
+      # print("call connect")
       self._client = pybullet.connect(pybullet.SHARED_MEMORY)
+      # print(self._client)
       if self._client >= 0:
         return
       else:
@@ -32,10 +34,13 @@ class BulletClient(object):
 
   def __del__(self):
     """Clean up connection if not already done."""
-    try:
-      pybullet.disconnect(physicsClientId=self._client)
-    except pybullet.error:
-      pass
+    # print("call __del__")
+    pass
+    # due to the gaberage collection mechanism, this might cause bug
+    # try:
+    #   pybullet.disconnect(physicsClientId=self._client)
+    # except pybullet.error:
+    #   pass
 
   def __getattr__(self, name):
     """Inject the client id into Bullet functions."""

@@ -3,7 +3,16 @@ import numpy as np
 import pybullet
 from pybullet_utils import bullet_client
 
+from pybullet_envs.utils import reset_current_system_state, get_current_system_state
+
 from pkg_resources import parse_version
+
+from os import path
+import tensorflow as tf
+from tensorflow.keras.models import load_model
+
+ROOT = path.dirname(path.abspath(gym.__file__))+"/envs/env_approx/"
+from tensorflow.keras import backend as K
 
 
 class MJCFBaseBulletEnv(gym.Env):
@@ -32,6 +41,8 @@ class MJCFBaseBulletEnv(gym.Env):
     self.action_space = robot.action_space
     self.observation_space = robot.observation_space
 
+    # self.previou_parts = None
+
   def configure(self, args):
     self.robot.args = args
 
@@ -40,7 +51,7 @@ class MJCFBaseBulletEnv(gym.Env):
     self.robot.np_random = self.np_random  # use the same np_randomizer for robot as for env
     return [seed]
 
-  def reset(self):
+  def reset(self, x0=None):
     if (self.physicsClientId < 0):
       self.ownsPhysicsClient = True
 
@@ -63,9 +74,42 @@ class MJCFBaseBulletEnv(gym.Env):
     self.done = 0
     self.reward = 0
     dump = 0
+
     s = self.robot.reset(self._p)
+    if x0 is not None:
+      # first reset do not consider floor,
+      # the others should not consider floor
+      self.robot.parts.pop("floor", None)
+
+      self._p = reset_current_system_state(client=self._p, state=x0)
+      s = self.robot.calc_state()
+
     self.potential = self.robot.calc_potential()
+
     return s
+
+  @property
+  def state(self):
+    return np.array(get_current_system_state(client=self._p, flatten=True))
+
+  # def approximator(self, x0, step, algo, *args, **kwargs):
+  #   if "initial_space" not in self.__dir__():
+  #     raise Exception("no initial space specified")
+
+  #   dim = np.sum((self.initial_space.high-self.initial_space.low) != 0)
+
+  #   model_name = self.__class__.__name__+"-v0"
+  #   self.approx = load_model(ROOT+model_name+"/"+algo+"_vra_approx_approx"+str(step)+".model")
+
+  #   new_model = tf.keras.Sequential()
+  #   new_input = tf.keras.Input(tensor=tf.reshape(x0, (-1,dim)))
+  #   new_model.add(new_input)
+  #   for layer in self.approx.layers:
+  #       new_model.add(layer)
+
+  #   sess = K.get_session()
+
+  #   return tf.reshape(new_model.output, (-1, 1)), sess
 
   def render(self, mode='human', close=False):
     if mode == "human":

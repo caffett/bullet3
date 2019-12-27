@@ -59,6 +59,7 @@ class XmlBasedRobot:
         self.robot_name = robot_name.decode("utf8")
         part_name = part_name.decode("utf8")
         parts[part_name] = BodyPart(self._p, part_name, bodies, i, -1)
+
       for j in range(self._p.getNumJoints(bodies[i])):
         self._p.setJointMotorControl2(bodies[i],
                                       j,

@@ -8,7 +8,9 @@ class BulletClient(object):
 
   def __init__(self, connection_mode=pybullet.DIRECT, options=""):
     """Create a simulation and connect to it."""
+    # print("call connect")
     self._client = pybullet.connect(pybullet.SHARED_MEMORY)
+    # print("client:", self._client)
     if (self._client < 0):
       print("options=", options)
       self._client = pybullet.connect(connection_mode, options=options)
@@ -16,10 +18,12 @@ class BulletClient(object):
 
   def __del__(self):
     """Clean up connection if not already done."""
-    try:
-      pybullet.disconnect(physicsClientId=self._client)
-    except pybullet.error:
-      pass
+    # print("call del")
+    pass
+    # try:
+    #   pybullet.disconnect(physicsClientId=self._client)
+    # except pybullet.error:
+    #   pass
 
   def __getattr__(self, name):
     """Inject the client id into Bullet functions."""
