@@ -52,6 +52,9 @@ class WalkerBaseBulletEnv(MJCFBaseBulletEnv):
   def _isDone(self):
     return self._alive < 0
 
+  def check_safe(self, *args):
+    return self._alive >= 0
+
   def move_robot(self, init_x, init_y, init_z):
     "Used by multiplayer stadium to move sideways, to another running lane."
     self.cpp_robot.query_position()
