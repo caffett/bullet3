@@ -52,8 +52,20 @@ class WalkerBaseBulletEnv(MJCFBaseBulletEnv):
   def _isDone(self):
     return self._alive < 0
 
-  def check_safe(self, *args):
-    return self._alive >= 0
+  def check_safe(self, sys_state):
+    self.reset(x0=sys_state)
+    state = self.robot.calc_state()
+    state_aliveness = float(
+        self.robot.alive_bonus(
+        state[0] + self.robot.initial_z,
+        self.robot.body_rpy[1]))
+    # if state_aliveness < 0:
+    #   print("---check_safe---")
+    #   print(state[0]-self.robot.initial_z)
+    #   print(self.robot.body_rpy[1])
+    #   print(state_aliveness)
+    
+    return state_aliveness >= 0
 
   def move_robot(self, init_x, init_y, init_z):
     "Used by multiplayer stadium to move sideways, to another running lane."
@@ -82,6 +94,10 @@ class WalkerBaseBulletEnv(MJCFBaseBulletEnv):
             state[0] + self.robot.initial_z,
             self.robot.body_rpy[1]))  # state[0] is body height above ground, body_rpy[1] is pitch
     # self.reward
+    # if self._alive < 0:
+    #   print(state[0]-self.robot.initial_z)
+    #   print(self.robot.body_rpy[1])
+    #   print(self._alive)
     done = self._isDone()
 
     if not np.isfinite(state).all():

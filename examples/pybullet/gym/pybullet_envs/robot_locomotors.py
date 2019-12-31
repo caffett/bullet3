@@ -127,7 +127,7 @@ class Hopper(WalkerBase):
     return +1 if z > 0.8 and abs(pitch) < 1.0 else -1
 
   def safety_reward(self, z, pitch):
-    return (z-0.8) + (1.0-abs(pitch)) if z > 0.8 and abs(pitch) < 1.0 else -99999
+    return (z-0.8) + (1.0-abs(pitch)) if z > 0.8 and abs(pitch) < 1.0 else -1e10
 
 
 class Walker2D(WalkerBase):
@@ -163,7 +163,7 @@ class HalfCheetah(WalkerBase):
   def safety_reward(self, z, pitch):
     return (1.0-np.abs(pitch)) - self.feet_contact[1] - self.feet_contact[2] - self.feet_contact[4]\
            - self.feet_contact[5] if np.abs(pitch) < 1.0 and not self.feet_contact[1] and not self.feet_contact[
-           2] and not self.feet_contact[4] and not self.feet_contact[5] else -99999
+           2] and not self.feet_contact[4] and not self.feet_contact[5] else -1e-10
 
   def robot_specific_reset(self, bullet_client):
     WalkerBase.robot_specific_reset(self, bullet_client)
@@ -185,7 +185,7 @@ class Ant(WalkerBase):
     return +1 if z > 0.26 else -1  # 0.25 is central sphere rad, die if it scrapes the ground
 
   def safety_reward(self, z, pitch):
-    return z-0.26 if z > 0.26 else -99999
+    return z-0.26 if z > 0.26 else -1e10
 
 
 class Humanoid(WalkerBase):
@@ -248,7 +248,7 @@ class Humanoid(WalkerBase):
     return +2 if z > 0.78 else -1  # 2 here because 17 joints produce a lot of electricity cost just from policy noise, living must be better than dying
 
   def safety_reward(self, z, pitch):
-    return 2*(z-0.78) if z > 0.78 else -99999
+    return 2*(z-0.78) if z > 0.78 else -1e10
 
 
 def get_cube(_p, x, y, z):
