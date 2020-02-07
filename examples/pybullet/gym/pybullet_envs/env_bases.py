@@ -60,6 +60,9 @@ class MJCFBaseBulletEnv(gym.Env):
       else:
         self._p = bullet_client.BulletClient()
 
+      # set the simulation as deteministic
+      pybullet.setPhysicsEngineParameter(deterministicOverlappingPairs=1)
+
       self.physicsClientId = self._p._client
       self._p.configureDebugVisualizer(pybullet.COV_ENABLE_GUI, 0)
 
@@ -76,6 +79,7 @@ class MJCFBaseBulletEnv(gym.Env):
     dump = 0
 
     s = self.robot.reset(self._p)
+    
     if x0 is not None:
       # first reset do not consider floor,
       # the others should not consider floor

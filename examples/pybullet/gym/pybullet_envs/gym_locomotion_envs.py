@@ -32,6 +32,8 @@ class WalkerBaseBulletEnv(MJCFBaseBulletEnv):
 
   def reset(self, **kwargs):
     if (self.stateId >= 0):
+      # disable restore
+      # pass
       # print("restoreState self.stateId:",self.stateId)
       self._p.restoreState(self.stateId)
 
@@ -44,17 +46,26 @@ class WalkerBaseBulletEnv(MJCFBaseBulletEnv):
                             self.parts[f].bodyPartIndex) for f in self.foot_ground_object_names])
     self._p.configureDebugVisualizer(pybullet.COV_ENABLE_RENDERING, 1)
     if (self.stateId < 0):
+      # disable save
+      # pass
       self.stateId = self._p.saveState()
-      #print("saving state self.stateId:",self.stateId)
+      # print("saving state self.stateId:",self.stateId)
 
     return r
 
   def _isDone(self):
     return self._alive < 0
 
-  def check_safe(self, sys_state):
+  def check_safe(self, sys_state, last_reward=None, unsafe_threshold=-9e4):
+    if last_reward is not None:
+      # Should define reward carefully
+      return last_reward > unsafe_threshold
+
     self.reset(x0=sys_state)
+    # This will cause small divation on some benchmarks.
+    # Use last_reward to check instead. 
     state = self.robot.calc_state()
+
     state_aliveness = float(
         self.robot.alive_bonus(
         state[0] + self.robot.initial_z,
@@ -199,7 +210,7 @@ class HalfCheetahBulletEnv(WalkerBaseBulletEnv):
     self.initial_space = spaces.Box(low=boundary[0], high=boundary[1])
 
   def _isDone(self):
-    return False
+    return self._alive < 0
 
   def step(self, a):
     state, reward, done, info = super().step(a)

@@ -4,7 +4,7 @@
 # Email: zikangxiong@gmail.com
 # Date:   2019-10-29 10:49:28
 # Last Modified by:   Zikang Xiong
-# Last Modified time: 2019-12-30 17:57:38
+# Last Modified time: 2020-02-03 01:08:16
 # -------------------------------
 import pybullet_envs
 import gym
@@ -82,8 +82,6 @@ def get_current_system_state(client, flatten=False):
 
 def reset_current_system_state(client, state):
     # print("call reset_current_system_state")
-    # set the simulation as deteministic
-    client.setPhysicsEngineParameter(deterministicOverlappingPairs=1)
     if not _iterable(state[-1]):
         template = get_current_system_state(client)
         state = _fill(template, state)
@@ -116,6 +114,10 @@ def core_func(env_name, iteration):
     for i in range(iteration):
         env.reset()
         env.step(env.action_space.sample())
+        # env.step(env.action_space.sample())
+        # env.step(env.action_space.sample())
+        # env.step(env.action_space.sample())
+
         state = env.env.state
         low_boundary[state < low_boundary] = state[state < low_boundary]
         high_boundary[state > high_boundary] = state[state > high_boundary]
@@ -124,7 +126,7 @@ def core_func(env_name, iteration):
     return low_boundary, high_boundary
 
 
-def initial_boundary_estimate(env_name, iteration=100000):
+def initial_boundary_estimate(env_name, iteration=1000000):
     proc_num = 64
     pool = mp.Pool(processes=proc_num)
     # print(env_name)
@@ -141,7 +143,15 @@ def initial_boundary_estimate(env_name, iteration=100000):
     pool.close()
 
     # print(low, high)
-    print(env_name, ":", np.sum((high_boundary - low_boundary) != 0))
+    diff = high_boundary - low_boundary
+    print(env_name, ":", np.sum(diff != 0))
+
+    # enlarge the boundary
+    ratio = 4
+    center = diff / 2
+    low_boundary = center - ((center - low_boundary) * ratio)
+    high_boundary = center + ((high_boundary - center) * ratio)
+
 
     path = ROOT + "/initial_space/" + env_name
     if not os.path.exists(path):
@@ -198,5 +208,5 @@ if __name__ == "__main__":
                   "ReacherBulletEnv-v0", "HopperBulletEnv-v0", "HumanoidBulletEnv-v0",
                   "InvertedDoublePendulumBulletEnv-v0", "InvertedPendulumSwingupBulletEnv-v0", "Walker2DBulletEnv-v0"]
     for name in benchmarks:
-        initial_boundary_estimate(name, int(1))
+        initial_boundary_estimate(name, 10000)
         print("done")
