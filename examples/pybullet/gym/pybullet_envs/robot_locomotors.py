@@ -21,7 +21,7 @@ class WalkerBase(MJCFBasedRobot):
         self.walk_target_y = 0
         self.body_xyz = [0, 0, 0]
 
-        self.reset_cal_state_count = 0
+        # self.reset_cal_state_count = 0
 
     def robot_specific_reset(self, bullet_client):
         self._p = bullet_client
@@ -56,8 +56,8 @@ class WalkerBase(MJCFBasedRobot):
                          )  # torso z is more informative than mean z
         self.body_rpy = body_pose.rpy()
         z = self.body_xyz[2]
-        if self.initial_z == None or self.reset_cal_state_count < 2:
-            self.reset_cal_state_count += 1
+        if self.initial_z == None: #or self.reset_cal_state_count < 2:
+            # self.reset_cal_state_count += 1
             self.initial_z = z
         r, p, yaw = self.body_rpy
         self.walk_target_theta = np.arctan2(self.walk_target_y - self.body_xyz[1],

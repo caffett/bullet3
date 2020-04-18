@@ -61,22 +61,21 @@ class WalkerBaseBulletEnv(MJCFBaseBulletEnv):
       # Should define reward carefully
       return last_reward > unsafe_threshold
 
-    self.reset(x0=sys_state)
-    # This will cause small divation on some benchmarks.
-    # Use last_reward to check instead. 
-    state = self.robot.calc_state()
+    # FIXME: reset will overwrite the initial_z
+    # self.reset(x0=sys_state)
+    # state = self.robot.calc_state()
 
-    state_aliveness = float(
-        self.robot.alive_bonus(
-        state[0] + self.robot.initial_z,
-        self.robot.body_rpy[1]))
-    # if state_aliveness < 0:
-    #   print("---check_safe---")
-    #   print(state[0]-self.robot.initial_z)
-    #   print(self.robot.body_rpy[1])
-    #   print(state_aliveness)
+    # state_aliveness = float(
+    #     self.robot.alive_bonus(
+    #     state[0] + self.robot.initial_z,
+    #     self.robot.body_rpy[1]))
+    # # if state_aliveness < 0:
+    # #   print("---check_safe---")
+    # #   print(state[0]-self.robot.initial_z)
+    # #   print(self.robot.body_rpy[1])
+    # #   print(state_aliveness)
     
-    return state_aliveness >= 0
+    # return state_aliveness >= 0
 
   def move_robot(self, init_x, init_y, init_z):
     "Used by multiplayer stadium to move sideways, to another running lane."
@@ -182,6 +181,7 @@ class HopperBulletEnv(WalkerBaseBulletEnv):
     initial_boundary_path = ROOT+"/initial_space/"+self.__class__.__name__+"-v0/boundary.npy"
     boundary = np.load(initial_boundary_path)
     self.initial_space = spaces.Box(low=boundary[0], high=boundary[1])
+    self.changable_dim = [False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
 
   def step(self, a):
     state, reward, done, info = super().step(a)
@@ -195,6 +195,7 @@ class Walker2DBulletEnv(WalkerBaseBulletEnv):
     initial_boundary_path = ROOT+"/initial_space/"+self.__class__.__name__+"-v0/boundary.npy"
     boundary = np.load(initial_boundary_path)
     self.initial_space = spaces.Box(low=boundary[0], high=boundary[1])
+    self.changable_dim = np.full(self.initial_space.shape, True)
 
   def step(self, a):
     state, reward, done, info = super().step(a)
@@ -208,6 +209,7 @@ class HalfCheetahBulletEnv(WalkerBaseBulletEnv):
     initial_boundary_path = ROOT+"/initial_space/"+self.__class__.__name__+"-v0/boundary.npy"
     boundary = np.load(initial_boundary_path)
     self.initial_space = spaces.Box(low=boundary[0], high=boundary[1])
+    self.changable_dim = [False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
 
   def _isDone(self):
     return self._alive < 0
@@ -224,6 +226,10 @@ class AntBulletEnv(WalkerBaseBulletEnv):
     initial_boundary_path = ROOT+"/initial_space/"+self.__class__.__name__+"-v0/boundary.npy"
     boundary = np.load(initial_boundary_path)
     self.initial_space = spaces.Box(low=boundary[0], high=boundary[1])
+    # TODO: ZX: slove this ugly hardcode
+    self.changable_dim = np.array([False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, True, True, True, True, True, True, True, True, True, True, True])
+
+    #np.full(self.initial_space.shape, True)
 
   def step(self, a):
     state, reward, done, info = super().step(a)
@@ -240,6 +246,7 @@ class HumanoidBulletEnv(WalkerBaseBulletEnv):
     initial_boundary_path = ROOT+"/initial_space/"+self.__class__.__name__+"-v0/boundary.npy"
     boundary = np.load(initial_boundary_path)
     self.initial_space = spaces.Box(low=boundary[0], high=boundary[1])
+    self.changable_dim = [False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, True, True, True, True, True, True, True, True, True, True, True]
 
   def step(self, a):
     state, reward, done, info = super().step(a)

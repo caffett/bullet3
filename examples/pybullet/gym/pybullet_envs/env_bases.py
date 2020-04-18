@@ -3,16 +3,12 @@ import numpy as np
 import pybullet
 from pybullet_utils import bullet_client
 
-from pybullet_envs.utils import reset_current_system_state, get_current_system_state
+from pybullet_utils.system_state import reset_current_system_state, get_current_system_state
+# from pybullet_envs.utils import reset_current_system_state, get_current_system_state
 
 from pkg_resources import parse_version
 
-from os import path
-import tensorflow as tf
-from tensorflow.keras.models import load_model
-
-ROOT = path.dirname(path.abspath(gym.__file__))+"/envs/env_approx/"
-from tensorflow.keras import backend as K
+import pdb
 
 
 class MJCFBaseBulletEnv(gym.Env):
@@ -61,7 +57,7 @@ class MJCFBaseBulletEnv(gym.Env):
         self._p = bullet_client.BulletClient()
 
       # set the simulation as deteministic
-      pybullet.setPhysicsEngineParameter(deterministicOverlappingPairs=1)
+      self._p.setPhysicsEngineParameter(deterministicOverlappingPairs=1)
 
       self.physicsClientId = self._p._client
       self._p.configureDebugVisualizer(pybullet.COV_ENABLE_GUI, 0)
@@ -76,16 +72,15 @@ class MJCFBaseBulletEnv(gym.Env):
     self.frame = 0
     self.done = 0
     self.reward = 0
-    dump = 0
 
     s = self.robot.reset(self._p)
     
     if x0 is not None:
-      # first reset do not consider floor,
-      # the others should not consider floor
-      self.robot.parts.pop("floor", None)
-
-      self._p = reset_current_system_state(client=self._p, state=x0)
+      if len(x0) == sum(self.changable_dim):
+        temp = get_current_system_state(self._p, flatten=True)
+        temp[self.changable_dim] = x0
+        x0 = temp
+      reset_current_system_state(client=self._p, state=x0)
       s = self.robot.calc_state()
 
     self.potential = self.robot.calc_potential()
@@ -94,26 +89,12 @@ class MJCFBaseBulletEnv(gym.Env):
 
   @property
   def state(self):
+    return np.array(get_current_system_state(client=self._p, flatten=True))[self.changable_dim]
+
+  @property
+  def full_state(self):
     return np.array(get_current_system_state(client=self._p, flatten=True))
-
-  # def approximator(self, x0, step, algo, *args, **kwargs):
-  #   if "initial_space" not in self.__dir__():
-  #     raise Exception("no initial space specified")
-
-  #   dim = np.sum((self.initial_space.high-self.initial_space.low) != 0)
-
-  #   model_name = self.__class__.__name__+"-v0"
-  #   self.approx = load_model(ROOT+model_name+"/"+algo+"_vra_approx_approx"+str(step)+".model")
-
-  #   new_model = tf.keras.Sequential()
-  #   new_input = tf.keras.Input(tensor=tf.reshape(x0, (-1,dim)))
-  #   new_model.add(new_input)
-  #   for layer in self.approx.layers:
-  #       new_model.add(layer)
-
-  #   sess = K.get_session()
-
-  #   return tf.reshape(new_model.output, (-1, 1)), sess
+  
 
   def render(self, mode='human', close=False):
     if mode == "human":

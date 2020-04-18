@@ -18,6 +18,7 @@ class ReacherBulletEnv(MJCFBaseBulletEnv):
     initial_boundary_path = ROOT+"/initial_space/"+self.__class__.__name__+"-v0/boundary.npy"
     boundary = np.load(initial_boundary_path)
     self.initial_space = spaces.Box(low=boundary[0], high=boundary[1])
+    self.changable_dim = (self.initial_space.high - self.initial_space.low) != 0
     self.rewards_dir = {"electricity": 0.0}
 
   def create_single_player_scene(self, bullet_client):
