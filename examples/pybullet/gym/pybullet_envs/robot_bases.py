@@ -119,14 +119,16 @@ class MJCFBasedRobot(XmlBasedRobot):
     XmlBasedRobot.__init__(self, robot_name, action_dim, obs_dim, self_collision)
     self.model_xml = model_xml
     self.doneLoading = 0
+    self.closed = False
 
   def reset(self, bullet_client):
 
     self._p = bullet_client
-    #print("Created bullet_client with id=", self._p._client)
-    if (self.doneLoading == 0):
+    # print("Created bullet_client with id=", self._p._client)
+    if (self.doneLoading == 0 or self.closed):
       self.ordered_joints = []
       self.doneLoading = 1
+      self.closed = False
       if self.self_collision:
         self.objects = self._p.loadMJCF(os.path.join(pybullet_data.getDataPath(), "mjcf",
                                                      self.model_xml),

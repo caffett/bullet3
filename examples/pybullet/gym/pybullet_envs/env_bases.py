@@ -8,8 +8,6 @@ from pybullet_utils.system_state import reset_current_system_state, get_current_
 
 from pkg_resources import parse_version
 
-import pdb
-
 
 class MJCFBaseBulletEnv(gym.Env):
   """
@@ -132,6 +130,7 @@ class MJCFBaseBulletEnv(gym.Env):
     if (self.ownsPhysicsClient):
       if (self.physicsClientId >= 0):
         self._p.disconnect()
+        self.robot.closed = True
     self.physicsClientId = -1
 
   def HUD(self, state, a, done):

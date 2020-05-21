@@ -24,7 +24,6 @@ class WalkerBase(MJCFBasedRobot):
         # self.reset_cal_state_count = 0
 
     def robot_specific_reset(self, bullet_client):
-        self._p = bullet_client
         for j in self.ordered_joints:
             j.reset_current_position(
                 self.np_random.uniform(low=-0.1, high=0.1), 0)
@@ -133,7 +132,7 @@ class Hopper(WalkerBase):
         return +1 if z > 0.8 and abs(pitch) < 1.0 else -1
 
     def safety_reward(self, z, pitch):
-        return (z - 0.8) + (1.0 - abs(pitch)) if z > 0.8 and abs(pitch) < 1.0 else -1e5
+        return min(1, (z - 0.8) + (1.0 - abs(pitch))) if z > 0.8 and abs(pitch) < 1.0 else -1e5 
 
 
 class Walker2D(WalkerBase):
@@ -171,7 +170,7 @@ class HalfCheetah(WalkerBase):
         #and not self.feet_contact[1] and not self.feet_contact[2] and not self.feet_contact[4] and not self.feet_contact[5]
 
     def safety_reward(self, z, pitch):
-        return (np.pi/2 - np.abs(pitch)) if np.abs(pitch) < np.pi/2 else -1e5
+        return min(np.pi/2, (np.pi/2 - np.abs(pitch))) if np.abs(pitch) < np.pi/2 else -1e5
         # and not self.feet_contact[1] and not self.feet_contact[2] and not self.feet_contact[4] and not self.feet_contact[5]
 
     def robot_specific_reset(self, bullet_client):
@@ -197,7 +196,7 @@ class Ant(WalkerBase):
         return +1 if z > 0.26 else -1
 
     def safety_reward(self, z, pitch):
-      return z - 0.26 if z > 0.26 else -1e5
+      return min(0.5, z - 0.26) if z > 0.26 else -1e5
 
 
 class Humanoid(WalkerBase):
@@ -268,7 +267,7 @@ class Humanoid(WalkerBase):
         return +2 if z > 0.78 else -1
 
     def safety_reward(self, z, pitch):
-        return 2 * (z - 0.78) if z > 0.78 else -1e5
+        return min(2, 2 * (z - 0.78)) if z > 0.78 else -1e5
 
 
 def get_cube(_p, x, y, z):
