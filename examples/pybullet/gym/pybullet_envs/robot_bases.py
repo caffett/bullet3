@@ -125,7 +125,6 @@ class MJCFBasedRobot(XmlBasedRobot):
 
     self._p = bullet_client
     # print("Created bullet_client with id=", self._p._client)
-    print(self.closed)
     if (self.doneLoading == 0 or self.closed):
       self.ordered_joints = []
       self.doneLoading = 1
