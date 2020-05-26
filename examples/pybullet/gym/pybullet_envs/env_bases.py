@@ -133,6 +133,8 @@ class MJCFBaseBulletEnv(gym.Env):
       if (self.physicsClientId >= 0):
         self._p.disconnect()
     self.physicsClientId = -1
+    self.closed = True
+    print("!!!")
 
   def HUD(self, state, a, done):
     pass
