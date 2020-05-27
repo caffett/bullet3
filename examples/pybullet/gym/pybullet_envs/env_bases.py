@@ -45,7 +45,7 @@ class MJCFBaseBulletEnv(gym.Env):
     self.robot.np_random = self.np_random  # use the same np_randomizer for robot as for env
     return [seed]
 
-  def reset(self, x0=None):
+  def reset(self, x0=None, **kwargs):
     if (self.physicsClientId < 0):
       self.ownsPhysicsClient = True
 
