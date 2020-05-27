@@ -10,8 +10,8 @@ import pybullet_data
 
 class XmlBasedRobot:
   """
-	Base class for mujoco .xml based agents.
-	"""
+  Base class for mujoco .xml based agents.
+  """
 
   self_collision = True
 
@@ -112,8 +112,8 @@ class XmlBasedRobot:
 
 class MJCFBasedRobot(XmlBasedRobot):
   """
-	Base class for mujoco .xml based agents.
-	"""
+  Base class for mujoco .xml based agents.
+  """
 
   def __init__(self, model_xml, robot_name, action_dim, obs_dim, self_collision=True):
     XmlBasedRobot.__init__(self, robot_name, action_dim, obs_dim, self_collision)
@@ -154,8 +154,8 @@ class MJCFBasedRobot(XmlBasedRobot):
 
 class URDFBasedRobot(XmlBasedRobot):
   """
-	Base class for URDF .xml based robots.
-	"""
+  Base class for URDF .xml based robots.
+  """
 
   def __init__(self,
                model_urdf,
@@ -209,8 +209,8 @@ class URDFBasedRobot(XmlBasedRobot):
 
 class SDFBasedRobot(XmlBasedRobot):
   """
-	Base class for SDF robots in a Scene.
-	"""
+  Base class for SDF robots in a Scene.
+  """
 
   def __init__(self,
                model_sdf,

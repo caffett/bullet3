@@ -310,8 +310,8 @@ class HumanoidFlagrun(Humanoid):
 
         if (self.flag):
             # for b in self.flag.bodies:
-            #	print("remove body uid",b)
-            #	p.removeBody(b)
+            #   print("remove body uid",b)
+            #   p.removeBody(b)
             self._p.resetBasePositionAndOrientation(self.flag.bodies[0],
                                                     [self.walk_target_x,
                                                         self.walk_target_y, 0.7],
